@@ -65,7 +65,7 @@ liquid_timeseries = {liquid: None for liquid in liquid_groups}
 time_indices = [0, 1, 2, 3]
 num_liquids = len(liquid_groups)
 
-plot_all_liquids = False
+plot_all_liquids = True
 if plot_all_liquids:
 	axs: list[Axes]
 	fig, axs = plt.subplots(nrows=4, sharex=True, sharey=True)
@@ -79,7 +79,8 @@ if plot_all_liquids:
 		for j, time_point in enumerate(time_points):
 			curr_n, curr_mean, curr_stdev = get_mean_stdev(time_point, liquid)
 			curr_series[j] = curr_mean
-			curr_errs[j] = curr_stdev
+			curr_errs[j] = curr_stdev / (curr_n ** .5)
+			print(liquid, time_point, curr_mean, curr_errs[j])
 		curr_ax.errorbar(time_indices, curr_series, color=colors[i], elinestyle="--", elinewidth=1, marker='o', capthick=2, capsize=4, yerr=curr_errs, label=liquid)
 
 	axis_font = {'size': 15}
@@ -139,14 +140,15 @@ if sugar_no_sugar_graph:
 			curr_timesugar_data = curr_sugar_data[curr_sugar_data["Time"] == time_point]
 			glucose_vals = curr_timesugar_data["Blood Glucose"]
 			curr_mean = np.mean(glucose_vals)
+			curr_n = len(glucose_vals)
 			# Sample variance
 			curr_var = np.var(glucose_vals, ddof=1)
-			std = curr_var ** .5
+			std = (curr_var / curr_n) ** .5
 			curr_means.append(curr_mean)
 			curr_stds.append(std)
+			print(contained_sugar, time_point, curr_mean, std)
 		curr_means = np.array(curr_means)
 		curr_stds = np.array(curr_stds)
-		print(contained_sugar, curr_means, curr_stds)
 
 		curr_ax.errorbar(time_indices, curr_means, elinestyle="--", color=colors[ax_ind], elinewidth=1, marker='o', capthick=2, capsize=4, yerr=curr_stds, label="Sugar" if contained_sugar else "No Sugar")
 
@@ -163,8 +165,8 @@ if sugar_no_sugar_graph:
 
 for time_point in time_points:
 	for liquid_group in liquid_groups:
-		_, mean, stdev = get_mean_stdev(time_point, liquid_group)
-		# print(liquid_group, time_point, mean, stdev)
+		curr_n, mean, stdev = get_mean_stdev(time_point, liquid_group)
+		print(liquid_group, time_point, mean, stdev / (curr_n ** .5))
 
 
 density_conversion_data: pd.DataFrame = pd.read_csv("./concentration_density_table.csv")
